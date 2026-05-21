@@ -1,0 +1,39 @@
+{
+  "name": "agy-migrate",
+  "version": "0.1.0",
+  "description": "Migrate Antigravity VS Code-style setup into Antigravity IDE.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michaelpetrik/agy-migrate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/michaelpetrik/agy-migrate/issues"
+  },
+  "homepage": "https://github.com/michaelpetrik/agy-migrate#readme",
+  "bin": {
+    "agy-migrate": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "prepare": "npm run build",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm test",
+    "pretest": "npm run build",
+    "start": "node dist/index.js",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
