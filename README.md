@@ -86,6 +86,8 @@ Use `--include-state` only when you want extension runtime state copied as well.
 
 `agy-migrate` can send error-only diagnostics to PostHog when `AGY_MIGRATE_POSTHOG_KEY` or `POSTHOG_API_KEY` is set. No successful migration events are sent.
 
+For public `npx agy-migrate` usage, the planned production design is a telemetry proxy so users do not need local PostHog environment variables and the package does not embed a PostHog key. See [tasks/telemetry-proxy.md](tasks/telemetry-proxy.md).
+
 The payload is designed for failure detection, not user tracking. It includes the CLI version, OS family, Node major version, command flags, sanitized error name/message/stack, deterministic error fingerprint, and redacted path shapes. It does not send raw source paths, target paths, usernames, home directories, snippets, settings, extension metadata contents, tokens, or file contents.
 
 Environment variables:
