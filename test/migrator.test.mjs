@@ -13,6 +13,7 @@ import {
   getAntigravityIdeExtensionsDir
 } from "../dist/platform.js";
 import { mergeSettings } from "../dist/settings.js";
+import { pathShape, sanitizeError, sanitizeText } from "../dist/telemetry.js";
 
 const defaults = {
   apply: false,
@@ -168,4 +169,31 @@ test("keeps npx publish entry points wired to built output", async () => {
   assert.equal(packageJson.bin["agy-migrate"], "./dist/index.js");
   assert.ok(packageJson.files.includes("dist"));
   assert.ok(packageJson.files.includes("README.md"));
+});
+
+test("sanitizes telemetry errors without raw PII paths or keys", () => {
+  const sanitized = sanitizeText(
+    "token=abc phc_123 Directory does not exist: /Users/alex/Secret Client/project"
+  );
+
+  assert.doesNotMatch(sanitized, /alex/);
+  assert.doesNotMatch(sanitized, /Secret Client/);
+  assert.doesNotMatch(sanitized, /project/);
+  assert.doesNotMatch(sanitized, /abc/);
+  assert.match(sanitized, /<path:[a-f0-9]{12}>/);
+  assert.match(sanitized, /token=<redacted>/);
+  assert.match(sanitized, /phc_<redacted>/);
+
+  const error = sanitizeError(new Error("Failed at C:\\Users\\alex\\Work\\repo"));
+  assert.doesNotMatch(error.message, /alex|Work|repo/);
+  assert.equal(error.fingerprint.length, 16);
+
+  const shape = pathShape("/Users/alex/.antigravity/extensions");
+  assert.deepEqual(shape, {
+    depth: 4,
+    leaf_kind: "extensions",
+    parent_kind: "antigravity",
+    has_antigravity: true,
+    hash: shape?.hash
+  });
 });

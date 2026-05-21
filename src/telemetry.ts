@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { homedir, hostname, platform, release, type } from "node:os";
 import { basename, dirname, sep } from "node:path";
 
@@ -128,7 +128,7 @@ export function sanitizeText(value: string): string {
     .replace(/phc_[A-Za-z0-9_-]+/g, "phc_<redacted>")
     .replace(/(token|key|secret|password)=([^&\s]+)/gi, "$1=<redacted>");
 
-  return text;
+  return redactPathLikeText(text);
 }
 
 export function pathShape(path: string | undefined): Record<string, unknown> | undefined {
@@ -136,7 +136,7 @@ export function pathShape(path: string | undefined): Record<string, unknown> | u
     return undefined;
   }
 
-  const normalized = sanitizeText(path).replace(/\\/g, "/");
+  const normalized = sanitizePathForShape(path).replace(/\\/g, "/");
   const parts = normalized.split("/").filter(Boolean);
   const leaf = parts.at(-1) ?? "";
 
@@ -177,6 +177,16 @@ function classifyLeaf(value: string): string {
   return "name";
 }
 
+function sanitizePathForShape(path: string): string {
+  const home = homedir();
+  let text = home ? path.split(home).join("<home>") : path;
+
+  return text
+    .replace(/\/Users\/[^/]+/g, "/Users/<user>")
+    .replace(/\/home\/[^/]+/g, "/home/<user>")
+    .replace(/[A-Za-z]:\\Users\\[^\\]+/g, "C:\\Users\\<user>");
+}
+
 function anonymousDistinctId(env: Env): string {
   const seed = env.AGY_MIGRATE_DISTINCT_ID
     ?? `${hostname()}${sep}${process.execPath}${sep}${process.version}`;
@@ -185,4 +195,15 @@ function anonymousDistinctId(env: Env): string {
 
 function hashStable(value: string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function redactPathLikeText(value: string): string {
+  return value
+    .replace(/file:\/\/\/[^\s)]+/g, (match) => `<path:${hashStable(match).slice(0, 12)}>`)
+    .replace(/(?:<home>|\/Users\/<user>|\/home\/<user>)[^\n\r)]*/g, (match) => {
+      return `<path:${hashStable(match).slice(0, 12)}>`;
+    })
+    .replace(/[A-Za-z]:\\Users\\<user>[^\n\r)]*/g, (match) => {
+      return `<path:${hashStable(match).slice(0, 12)}>`;
+    });
 }
